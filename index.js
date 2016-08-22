@@ -1,4 +1,4 @@
-require('newrelic');
+var nr = require('newrelic');
 
 var app = require('http').createServer();
 var io = require('socket.io')(app);
@@ -18,54 +18,53 @@ function handler (req, res) {
 }
 
 io.on('connection', function(socket) {
-  socket.on('add', function(data) {
+  socket.on('add', nr.createWebTransaction('websocket/add', function(data) {
     console.log('add', data);
 
     request
       .get(STATE_SERVER + '/add?' + require('querystring').stringify(data))
       .on('response', function(response) {
-        console.log(response.statusCode);
-       })
+        socket.broadcast.emit('add', data);
+        nr.endTransaction();
+      })
       .on('error', function(err) {
          console.log(err);
+         nr.endTransaction();
        });
+  }));
 
-    socket.broadcast.emit('add', data);
-  });
-
-  socket.on('del', function(data) {
+  socket.on('del', nr.createWebTransaction('websocket/del', function(data) {
     console.log('del', data);
 
     request
       .get(STATE_SERVER + '/del?' + require('querystring').stringify(data))
       .on('response', function(response) {
-        console.log(response.statusCode);
+        socket.broadcast.emit('del', data);
+        nr.endTransaction();
        })
       .on('error', function(err) {
          console.log(err);
-       });
+         nr.endTransaction();
+      });
+  }));
 
-    socket.broadcast.emit('del', data);
-  });
-
-  socket.on('bounce', function(data) {
+  socket.on('bounce', nr.createWebTransaction('websocket/bounce', function(data) {
     socket.broadcast.emit('bounce', data);
-  });
+    nr.endTransaction();
+  }));
 
-  socket.on('move', function(data) {
-    console.log('move', data);
-
+  socket.on('move', nr.createWebTransaction('websocket/move', function(data) {
     request
       .get(STATE_SERVER + '/move?' + require('querystring').stringify(data))
       .on('response', function(response) {
-        console.log(response.statusCode);
+        socket.broadcast.emit('move', data);
+        nr.endTransaction();
        })
       .on('error', function(err) {
          console.log(err);
+         nr.endTransaction();
        });
-
-    socket.broadcast.emit('move', data);
-  });
+  }));
 
   socket.on('disconnect', function() {
     console.log('disconnect');
