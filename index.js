@@ -48,9 +48,13 @@ io.on('connection', function(socket) {
     socket.broadcast.emit('del', data);
   });
 
+  socket.on('bounce', function(data) {
+    socket.broadcast.emit('bounce', data);
+  });
+
   socket.on('move', function(data) {
     console.log('move', data);
- 
+
     request
       .get(STATE_SERVER + '/move?' + require('querystring').stringify(data))
       .on('response', function(response) {
@@ -59,7 +63,7 @@ io.on('connection', function(socket) {
       .on('error', function(err) {
          console.log(err);
        });
-   
+
     socket.broadcast.emit('move', data);
   });
 
