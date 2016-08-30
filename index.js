@@ -67,7 +67,19 @@ io.on('connection', function(socket) {
   }));
 
   socket.on('disconnect', function() {
-    console.log('disconnect');
+     var data = {id: socket.id.substring(2)};
+     console.log('disconnect:', data);
+
+     request
+      .get(STATE_SERVER + '/del?' + require('querystring').stringify(data))
+      .on('response', function(response) {
+        socket.broadcast.emit('del', data);
+        nr.endTransaction();
+       })
+      .on('error', function(err) {
+         console.log(err);
+         nr.endTransaction();
+      });
   });
 
 });
